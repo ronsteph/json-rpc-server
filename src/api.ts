@@ -26,6 +26,7 @@ import {
   calculateContractStorageAccountId,
   getSyncTime,
   removeFromNodeList,
+  sanitizeIpAndPort,
 } from './utils'
 import crypto from 'crypto'
 import { logEventEmitter } from './logger'
@@ -593,13 +594,15 @@ async function injectAndRecordTx(
 
       if (entry !== undefined) {
         retries++
+        if (config.verbose) console.log('The retries are', retries)
         if (retries >= config.defaultRequestRetry) {
           console.error('Failed to find a non-blacklisted IP after max retries.')
           console.log('Injecting transaction with blacklisted node', nodeIpPort)
           break
         }
-        console.log('The IP address blacklisted is', nodeIpPort)
-        // Reassign nodeIpPort and baseUrl to find a new pair
+        if (config.verbose)
+          console.log('The IP address blacklisted is', nodeIpPort)
+          // Reassign nodeIpPort and baseUrl to find a new pair
         ;({ nodeIpPort, baseUrl } = getBaseUrl())
       }
     } while (entry !== undefined)
@@ -743,11 +746,22 @@ async function injectAndRecordTx(
       })
       .catch((e: Error) => {
         if (e.message.includes('timeout')) {
-          blacklistedIPMapping.set(
-            nodeIpPort,
-            { baseUrl: baseUrl, blackListedAt: Date.now() },
-            retainTimedOutEntriesForMillis
-          )
+          if (nodeIpPort !== undefined && typeof nodeIpPort === 'string') {
+            const validation = sanitizeIpAndPort(nodeIpPort)
+
+            if (validation.isValid) {
+              blacklistedIPMapping.set(
+                nodeIpPort,
+                { baseUrl: baseUrl, blackListedAt: Date.now() },
+                retainTimedOutEntriesForMillis
+              )
+            } else {
+              console.error(`Invalid nodeIpPort format: ${nodeIpPort} - ${validation.error}`)
+            }
+          } else {
+            console.error(`Invalid nodeIpPort input`)
+          }
+
           console.log(`injectAndRecordTx: transaction timed out ip: ${baseUrl}, e: ${e.message}`)
           nestedCountersInstance.countEvent('validatorBlacklist', nodeIpPort)
         }
