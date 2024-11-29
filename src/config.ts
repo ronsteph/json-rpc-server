@@ -15,6 +15,7 @@ type Config = {
     enabled: boolean
     serveSubscriptions: boolean
   }
+  trustProxy: boolean // Whether to trust the X-Forwarded-For header
   log_server: {
     ip: string
     port: number
@@ -116,6 +117,7 @@ export const CONFIG: Config = {
     enabled: true,
     serveSubscriptions: Boolean(process.env.WS_SAVE_SUBSCRIPTIONS) || false,
   },
+  trustProxy: false,
   log_server: {
     ip: process.env.LOG_SERVER_HOST || '0.0.0.0',
     port: Number(process.env.LOG_SERVER_PORT) || 4446,
@@ -151,12 +153,12 @@ export const CONFIG: Config = {
   aalgWarmup: Boolean(process.env.AALG_WARMUP) || true,
   aalgWarmupServiceTPS: 10,
   recordTxStatus: false, // not safe for production, keep this off. Known issue.
-  rateLimit: false,
+  rateLimit: true,
   rateLimitOption: {
     softReject: true,
     limitFromAddress: true,
     limitToAddress: true,
-    banIpAddress: false,
+    banIpAddress: true,
     banSpammerAddress: true,
     allowFaucetAccount: true,
     allowedTxCountInCheckInterval: 10, // allow 1 txs in every 12s = (checkInterval * 60 / allowedTxCountInCheckInterval)
