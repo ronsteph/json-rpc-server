@@ -4,7 +4,7 @@
 ARG NODE_VERSION=18.19.1
 ARG NODE_ENV=production
 
-FROM node:18.16.1-alpine
+FROM node:18.20.7-alpine
 SHELL [ "/bin/sh", "-cex" ]
 
 ## ENVs
